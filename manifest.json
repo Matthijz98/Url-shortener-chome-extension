@@ -1,14 +1,10 @@
 {
-    "update_url": "https://clients2.google.com/service/update2/crx",
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "BitLy",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Shorten links quick and easy",
     "background": {
-        "scripts": [
-            "background.js"
-        ],
-        "persistent": true
+        "service_worker": "background.js"
     },
     "options_page": "options.html",
     "icons": {
@@ -19,14 +15,16 @@
     },
     "permissions": [
         "tabs",
-        "http://*/*",
-        "https://*/*",
         "contextMenus",
-        "background"
+        "storage",
+        "scripting"
     ],
-    "browser_action": {
+    "action": {
         "default_icon": "icons/bitly_16.png",
         "default_popup": "popup.html",
         "default_title": "Shorten links quick and easy"
-    }
+    },
+    "host_permissions": [
+        "*://*/*"
+    ]
 }

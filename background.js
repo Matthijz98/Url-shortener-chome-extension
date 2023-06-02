@@ -1,103 +1,84 @@
-showOptions();
+chrome.contextMenus.onClicked.addListener(contextClick)
 
-function getVersion() {
-    var details = chrome.app.getDetails();
-    return parseFloat(details.version);
+async function getCurrentTab() {
+    let queryOptions = {active: true, currentWindow: true};
+    let [tab] = await chrome.tabs.query(queryOptions);
+    return tab;
 }
 
-function showOptions() {
-
-    if ((localStorage['version'] == undefined) || (localStorage['version'] < getVersion())) {
-        localStorage['version'] = getVersion();
-        chrome.tabs.create({
-            url: "options.html"
-        });
-    }
+function injectedFunction_egrave(text) {
+    let input = document.createElement('textarea');
+    document.body.appendChild(input);
+    input.value = text;
+    input.focus();
+    input.select();
+    document.execCommand("copy");
+    input.remove();
 }
 
 function copyToClipboard(text) {
-    var copyDiv = document.createElement('div');
-    copyDiv.contentEditable = true;
-    document.body.appendChild(copyDiv);
-    copyDiv.innerHTML = text;
-    copyDiv.unselectable = "off";
-    copyDiv.focus();
-    document.execCommand('SelectAll');
-    document.execCommand("Copy", false, null);
-    document.body.removeChild(copyDiv);
+    console.log(text);
+    getCurrentTab().then(function (tab) {
+        chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            args: [text],
+            function: injectedFunction_egrave
+        });
+    });
 }
 
-function rawurlencode(str) {
-    str = (str + '')
-        .toString();
-    return encodeURIComponent(str)
-        .replace(/!/g, '%21')
-        .replace(/'/g, '%27')
-        .replace(/\(/g, '%28')
-        .replace(/\)/g, '%29')
-        .replace(/\*/g, '%2A');
+chrome.runtime.onInstalled.addListener(function () {
+    chrome.contextMenus.create({
+        "id": "create_bitly_form_selection",
+        "title": "Shorten selection and copy to clipboard",
+        "contexts": ["selection"],
+    });
+
+    chrome.contextMenus.create({
+        "id": "create_bitly_from_link",
+        "title": "Shorten link and copy to clipboard",
+        "contexts": ["link"],
+    });
+});
+
+function contextClick(info) {
+    const {menuItemId} = info
+
+    if (menuItemId === 'create_bitly_form_selection') {
+        shorten(info['selectionText'])
+    }
+
+    if (menuItemId === 'create_bitly_from_link') {
+        shorten(info['linkUrl'])
+    }
 }
 
-chrome.contextMenus.create({
-    "title": "Shorten selection and copy to clipboard",
-    "contexts": ["selection"],
-    "onclick": function(info, tab) {
-        shorten(info.selectionText, null);
-    }
-});
-
-chrome.contextMenus.create({
-    "title": "Shorten link and copy to clipboard",
-    "contexts": ["link"],
-    "onclick": function(info, tab) {
-        shorten(info.linkUrl, null);
-    }
-});
-
-function shorten(text, returnResult) {
+function shorten(text) {
     if (text == "")
         return;
 
     copyToClipboard('Shortening, please wait a while...');
 
-    if (localStorage['token'] == undefined)
-        localStorage['token'] = "R_d47629726a6c43e6858f49eb7120a2c6";
+    chrome.storage.sync.get(['token'], function (result) {
+        const token = result.token;
 
-    if ((localStorage['ssl'] == undefined) || (localStorage['ssl'] == 0)) {
-        var protocol = "http";
-    } else {
-        var protocol = "https";
-    }
+        if (token == null) {
+            copyToClipboard('Please set your token in the options page');
+        }
 
-    var request = new XMLHttpRequest();
-    var url = 'https://api-ssl.bitly.com/v3/shorten?access_token=' + localStorage['token'] + '&longUrl=' + rawurlencode(text) + '&format=txt';
+        fetch('https://api-ssl.bitly.com/v4/shorten', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({"long_url": text, "domain": "bit.ly"})
+        }).then((data) => {
+            data.json().then((json) => {
+                copyToClipboard(json.link)
+            })
+        })
 
-    request.open("GET", url, true);
-    request.send(null);
-
-    request.onload = function() {
-        var result = request.responseText;
-        returnResult(request.responseText);
-        copyToClipboard(request.responseText)
-        // if(result.substr(0, 4) == "http") {
-        // 	copyToClipboard(request.responseText);
-
-        // 	if(returnResult != undefined)
-        // 		returnResult(request.responseText);
-        // }
-        // else {
-        // 	var errorMessage = 'Failed shortening a link! Please check your settings.';
-        // 	copyToClipboard('Error');
-
-        // 	if(returnResult != undefined) {
-        // 		returnResult(errorMessage);
-        // 	}
-        // 	else {
-        // 		alert(errorMessage);
-        // 	}
-        // }
-    }
-
-
+    });
 }
-Source code and support at http
+

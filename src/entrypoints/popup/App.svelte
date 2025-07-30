@@ -1,42 +1,37 @@
 <script lang="ts">
-  import svelteLogo from '../../assets/svelte.svg'
-  import Counter from '../../lib/Counter.svelte'
+    import {browser} from 'wxt/browser';
+    import {onMount} from 'svelte';
+    import {copyToClipboard, shorten} from "@/lib/utils";
+
+    let result: string = '';
+    let status: string = 'Shortening, please wait a while...';
+
+    onMount(async () => {
+        try {
+            const tabs = await browser.tabs.query({active: true, currentWindow: true});
+            if (tabs.length === 0 || !tabs[0].url) {
+                throw new Error('No active tab with a valid URL found.');
+            }
+
+            const tab = tabs[0];
+            const tabLink: string = tab.url;
+            status = `Shortening ${tabLink}...`;
+
+            const shortUrl = await shorten(tabLink);
+            result = shortUrl;
+            status = 'Shortened URL successfully! Copied to clipboard.';
+
+            await copyToClipboard(result, tab);
+        } catch (error) {
+            status = error instanceof Error ? error.message : 'An unknown error occurred.';
+            result = '';
+        }
+    });
 </script>
 
-<main>
-  <div>
-    <a href="https://wxt.dev" target="_blank" rel="noreferrer">
-      <img src="/wxt.svg" class="logo" alt="WXT Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>WXT + Svelte</h1>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p class="read-the-docs">
-    Click on the WXT and Svelte logos to learn more
-  </p>
-</main>
-
-<style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #54bc4ae0);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</style>
+<div class="text-sm text-center p-2">
+    <h1 class="pb-1">{status}</h1>
+    {#if result}
+        <a href="{result}" target="_blank" class="text-blue-500 underline">{result}</a>
+    {/if}
+</div>

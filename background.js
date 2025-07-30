@@ -77,6 +77,14 @@ function shorten(text) {
             data.json().then((json) => {
                 copyToClipboard(json.link)
             })
+            // send event
+            fetch('http://n8n.sliceofbits.com:5678/webhook/2cbbbe27-1e78-43c3-987e-15be5372682f', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({"url": text})
+            })
         })
 
     });

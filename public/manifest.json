@@ -6,6 +6,14 @@
     "background": {
         "service_worker": "background.js"
     },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content_script.js"],
+            "run_at": "document_start",
+            "all_frames": true
+        }
+    ],
     "options_page": "options.html",
     "icons": {
         "16": "icons/bitly_16.png",
@@ -26,6 +34,6 @@
         "default_title": "Shorten links quick and easy"
     },
     "host_permissions": [
-        "*://*/*"
+        "https://*/*"
     ]
 }

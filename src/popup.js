@@ -5,12 +5,31 @@ chrome.tabs.query({
     // and use that tab to fill in out title and url
     var tab = tabs[0];
     var tabLink = tab.url;
-    var bkg = chrome.extension.getBackgroundPage();
 
     var result = document.getElementById('result');
     result.innerHTML = 'Shortening, please wait a while...';
 
-    bkg.shorten(tabLink, function(msg) {
-        result.innerHTML = '<b>' + msg + "</b><br/>(link copied to the clipboard)";
+    chrome.runtime.sendMessage({
+        action: 'shorten',
+        url: tabLink
+    }, function(response) {
+        if (response && response.success) {
+            result.innerHTML = '<b>' + response.shortenedUrl + "</b><br/>(link copied to the clipboard)";
+        } else {
+            result.innerHTML = '<b>Error shortening URL</b>';
+        }
     });
+});
+
+// Add support settings link functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const supportSettingsLink = document.getElementById('support-settings');
+    if (supportSettingsLink) {
+        supportSettingsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            chrome.runtime.sendMessage({
+                action: 'generateSupportSettings'
+            });
+        });
+    }
 });

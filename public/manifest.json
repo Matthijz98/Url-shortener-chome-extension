@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "BitLy",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Shorten links quick and easy",
     "background": {
         "service_worker": "background.js"
@@ -17,7 +17,8 @@
         "tabs",
         "contextMenus",
         "storage",
-        "scripting"
+        "scripting",
+        "declarativeNetRequestWithHostAccess"
     ],
     "action": {
         "default_icon": "icons/bitly_16.png",

@@ -1,0 +1,1 @@
+export const CONFIG_KEY = "94e844c8";
